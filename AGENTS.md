@@ -10,6 +10,129 @@ Every change must use a dedicated branch and a pull request targeting `dev`, the
 
 Only an explicit user instruction can authorize an exception, such as applying a specific documentation update directly to `main`. Never infer an exception.
 
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
+
+# Project context
+
+This repository is a **web page template**. All development — generating components, pages, styles, and copy — is executed by an AI agent (Claude or Codex) via CLI. There are no manual browser-based design flows.
+
+---
+
+# Impeccable — Design vocabulary for agents
+
+Impeccable is installed. Its purpose is to maintain visual quality in agent-generated pages: it eliminates generic AI UI patterns ("AI slop"), refines typography, composition, and color, and keeps visual consistency across the codebase.
+
+All commands are invoked from the agent CLI. Do not use `/impeccable live` or the Chrome extension — they require an interactive browser and do not apply to this workflow.
+
+Full docs: https://impeccable.style
+
+## When to use it
+
+### At the start of each new page or project
+```
+/impeccable init       — run once per project; sets up PRODUCT.md and DESIGN.md
+/impeccable document   — if a visual system already exists, capture it in DESIGN.md before generating
+```
+
+### While the agent generates components or pages
+
+Run the command that matches the problem detected in the generated code:
+
+| Symptom in generated code | Command |
+|---|---|
+| UI with too many competing elements | `/impeccable distill` |
+| Flat typography, no hierarchy, AI-default | `/impeccable typeset` |
+| Vague copy, ambiguous labels, unclear hierarchy | `/impeccable clarify` |
+| Generic or off-brand color palette | `/impeccable colorize` |
+| Broken layout or visual composition | `/impeccable layout` |
+| Adding a component that fits the existing system | `/impeccable insert` |
+| Design doesn't work across breakpoints | `/impeccable adapt` |
+| Adding purposeful motion | `/impeccable animate` |
+| Final microinteractions and experiential details | `/impeccable delight` |
+| Aggressive redesign when everything else failed | `/impeccable overdrive` |
+
+### Before merge or deploy
+```
+/impeccable polish               — comprehensive final visual quality pass
+/impeccable audit                — production readiness check
+npx impeccable detect src/       — runs all 59 detectors; JSON output with exit codes for CI
+```
+
+## Recommended sequence
+
+Apply in order when a page has been generated and needs refinement:
+
+```
+/impeccable distill → /impeccable typeset → /impeccable polish → /impeccable audit
+```
+
+## Patterns the agent must never produce
+
+Impeccable detects 59 anti-patterns. These are the most common in AI-generated code — do not produce them:
+
+**Typography**
+- Decorative italic serif as a hero font
+- Vague headlines: "Unlock your potential", "Transform your workflow"
+- Uniform visual weight with no hierarchy
+
+**Layout & structure**
+- Cards inside cards (nested cards)
+- Numbered sections "01 Discover / 02 Design / 03 Deliver"
+- Eyebrow chip above the hero headline
+- Status-chip soup: badges on every data point without reason
+- Everything with the same visual weight
+
+**Components**
+- Ghost cards (outline-only, empty)
+- Excessive border-radius on all elements
+- Feature grids: icon + label + description in a grid
+- Generic box shadows with no design intent
+- Context-free CTAs: "Continue", "Get Started", "Learn More"
+- Forms with more fields than necessary
+- Decorative pulsing dot
+
+**Color**
+- "AI beige" — the warm off-white default agents reach for every time
+
+## Context files each command reads
+
+Keep these files up to date or commands will invent a system instead of inheriting yours:
+
+- **PRODUCT.md** — target users, surface mode, brand voice, visual anti-references
+- **DESIGN.md** — tokens, components, spacing, radii; Google Stitch format
+
+## Surface modes
+
+Declare the correct mode in PRODUCT.md for the page being built:
+
+| Mode | When |
+|---|---|
+| **Persuade** | Landing pages, capturing attention, conversion |
+| **Operate** | Dashboards, tools, completing tasks fast |
+| **Read** | Docs, articles, building understanding |
+| **Experience** | Portfolio, editorial, letting the work lead |
+
+## Agent rules
+
+1. Run `/impeccable init` at the start of any new project before generating code.
+2. After generating a complete page, always run `/impeccable polish` before marking the task done.
+3. Before every deploy, run `npx impeccable detect src/` and do not proceed if there are errors.
+4. Never produce any pattern listed in "Patterns the agent must never produce" — they are anti-patterns, not options.
+5. Commands inherit existing tokens and components — they do not overwrite. Keep DESIGN.md current.
+
+
+## Generated-site build requirements
+
+The existing build requirements from the Constructor template are preserved below.
+
 # Impeccable — Web Builder Skill
 
 You are an expert web developer building production-grade Next.js websites for real businesses.
