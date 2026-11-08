@@ -17,8 +17,38 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 let initialization: Promise<Resumen> | undefined;
 let sessionWasVerified = false;
+const legacySessionMarker = 'notas-session-established';
+function sessionMarker(): { storage: Storage; key: string; direct: boolean } | undefined {
+  try {
+    if (window.top === window) return { storage: localStorage, key: `${legacySessionMarker}:direct`, direct: true };
+    const ancestors = window.location.ancestorOrigins;
+    // The browser supplies the outermost ancestor. A referrer identifies the
+    // top-level parent only when this is not a nested frame.
+    const parent = ancestors?.length ? ancestors[ancestors.length - 1] : window.parent === window.top ? document.referrer : '';
+    if (parent) {
+      try {
+        const origin = new URL(parent).origin;
+        if (origin !== 'null' && /^https?:/.test(origin)) return { storage: localStorage, key: `${legacySessionMarker}:embedded:${origin}`, direct: false };
+      } catch { /* An opaque/invalid parent does not identify a partition. */ }
+    }
+    // Without an observable top-level origin, retain expectation in this frame
+    // across reloads instead of guessing another partition's identity.
+    return { storage: sessionStorage, key: `${legacySessionMarker}:embedded:context`, direct: false };
+  } catch { return undefined; }
+}
+function markerPresent(marker: ReturnType<typeof sessionMarker>) {
+  try { return marker?.storage.getItem(marker.key) === '1'; } catch { return false; }
+}
+function legacyMarkerPresent() {
+  try { return localStorage.getItem(legacySessionMarker) === '1'; } catch { return false; }
+}
 function expectedSession() {
-  try { return sessionWasVerified || localStorage.getItem('notas-session-established') === '1'; } catch { return sessionWasVerified; }
+  const marker = sessionMarker();
+  return sessionWasVerified || markerPresent(marker) || (marker?.direct === true && legacyMarkerPresent());
+}
+function rememberSession() {
+  const marker = sessionMarker();
+  try { marker?.storage.setItem(marker.key, '1'); } catch { /* The verified HttpOnly cookie still owns the session. */ }
 }
 export function initializeSession(recover = false) {
   if (initialization) return initialization;
@@ -28,10 +58,22 @@ export function initializeSession(recover = false) {
       throw new Error('Este navegador no permite preparar una sesión de forma segura. Abre la aplicación directamente en un navegador compatible.');
     }
     return navigator.locks.request('notas-de-bolsillo-session', { mode: 'exclusive' }, async () => {
+      const marker = sessionMarker();
+      if (!recover && marker?.direct === false && !markerPresent(marker) && legacyMarkerPresent()) {
+        // The old unscoped marker could belong to either cookie partition.
+        // Reuse an existing valid owner, but never create one from ambiguity.
+        try {
+          const summary = await readSummary();
+          sessionWasVerified = true; rememberSession(); return summary;
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 401) throw new Error('El acceso anterior no identifica esta sesión dentro de otra página. Abre la aplicación directamente o usa Recuperar el acceso para crear una sesión nueva de forma explícita.');
+          throw error;
+        }
+      }
       await api<{ ok: true }>('/api/session', { method: 'POST', body: JSON.stringify({ esperada: expectedSession(), ...(recover ? { recuperar: true } : {}) }) });
       const summary = await readSummary();
       sessionWasVerified = true;
-      try { localStorage.setItem('notas-session-established', '1'); } catch { /* The verified HttpOnly cookie still owns the session. */ }
+      rememberSession();
       return summary;
     });
   };
