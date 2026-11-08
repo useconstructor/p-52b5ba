@@ -1,0 +1,1 @@
+{"version":1,"workflows":[{"id":"info","name":"Información de la aplicación","description":"Consulta la descripción pública de Notas de Bolsillo.","endpoint":"/api/info","method":"GET","input":{}}]}
